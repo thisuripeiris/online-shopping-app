@@ -2,12 +2,12 @@ const user = require("../models/userModel");
 const bcrypt = require("bcryptjs");
 const { generateToken } = require("../utils/generateToken");
 
-// validate email format
+// Validate email format
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-//Register a new user
+// Register a new user
 exports.registerUser = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -20,33 +20,43 @@ exports.registerUser = async (req, res) => {
   }
 
   try {
-    //check if user already exists
-    const existUser = await user.findOne({ email });
+    // Normalize email (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if user already exists
+    const existUser = await user.findOne({ email: normalizedEmail });
     if (existUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
-    //hash the password
+    // Hash the password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    let role = "user";
-    if (/^admin\.monaro_\d+$/.test(email)) {
-      role = "admin";
-    }
+    // DEBUG: Log the email to ensure correct formatting
+    console.log("Registering email:", normalizedEmail);
 
-    //create a new user
+    // Assign role based on whether email contains "adminmonaro_"
+    const isAdminEmail = normalizedEmail.includes("adminmonaro_");
+    const assignedRole = isAdminEmail ? "admin" : "user";
+
+    // DEBUG: Log role assignment
+    console.log(
+      `Role assigned: ${assignedRole} (Admin check: ${isAdminEmail})`
+    );
+
+    // Create a new user
     const newUser = new user({
       username,
-      email,
+      email: normalizedEmail,
       password: hashedPassword,
-      role: role === "admin" ? "admin" : "user",
+      role: assignedRole,
     });
 
     await newUser.save();
     console.log("User registered successfully:", newUser);
 
-    //send response with token
+    // Send response with token
     res.status(201).json({
       message: "User registered successfully",
       token: generateToken(newUser._id),
@@ -63,7 +73,7 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-//Login a user
+// Login a user
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
 
@@ -76,8 +86,11 @@ exports.loginUser = async (req, res) => {
   }
 
   try {
+    // Normalize email (trim + lowercase)
+    const normalizedEmail = email.trim().toLowerCase();
+
     // Check if user exists
-    const foundUser = await user.findOne({ email });
+    const foundUser = await user.findOne({ email: normalizedEmail });
     if (!foundUser) {
       return res.status(400).json({ message: "User not found" });
     }
@@ -87,11 +100,13 @@ exports.loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
+
     console.log("User logged in successfully:", foundUser);
 
     // Generate token and send response
     res.status(200).json({
       message: "Login successful",
+      token: generateToken(foundUser._id),
       user: {
         id: foundUser._id,
         username: foundUser.username,
@@ -100,7 +115,7 @@ exports.loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
     console.error("Error logging in user:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
