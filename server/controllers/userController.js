@@ -1,12 +1,12 @@
-const user = require("../models/userModel");
-const bcrypt = require("bcryptjs");
-const { generateToken } = require("../utils/generateToken");
+import User from "../models/userModel.js";
+import bcrypt from "bcryptjs";
+import { generateToken } from "../utils/generateToken.js";
 
 // Validate email format
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-// Register a new user
-exports.registerUser = async (req, res) => {
+// REGISTER
+export const registerUser = async (req, res) => {
   const { username, email, password } = req.body;
 
   if (!username || !email || !password) {
@@ -20,11 +20,10 @@ exports.registerUser = async (req, res) => {
   }
 
   try {
-    // Normalize email (trim + lowercase)
     const normalizedEmail = email.trim().toLowerCase();
 
     // Check if user already exists
-    const existUser = await user.findOne({ email: normalizedEmail });
+    const existUser = await User.findOne({ email: normalizedEmail });
     if (existUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
@@ -33,20 +32,12 @@ exports.registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // DEBUG: Log the email to ensure correct formatting
-    console.log("Registering email:", normalizedEmail);
-
-    // Assign role based on whether email contains "adminmonaro_"
+    // Assign role (admin if email contains "adminmonaro_")
     const isAdminEmail = normalizedEmail.includes("adminmonaro_");
     const assignedRole = isAdminEmail ? "admin" : "user";
 
-    // DEBUG: Log role assignment
-    console.log(
-      `Role assigned: ${assignedRole} (Admin check: ${isAdminEmail})`
-    );
-
-    // Create a new user
-    const newUser = new user({
+    // Create new user
+    const newUser = new User({
       username,
       email: normalizedEmail,
       password: hashedPassword,
@@ -54,12 +45,10 @@ exports.registerUser = async (req, res) => {
     });
 
     await newUser.save();
-    console.log("User registered successfully:", newUser);
 
-    // Send response with token
     res.status(201).json({
       message: "User registered successfully",
-      token: generateToken(newUser._id),
+      token: generateToken(newUser), // ✅ Pass full user object
       user: {
         id: newUser._id,
         username: newUser.username,
@@ -73,8 +62,8 @@ exports.registerUser = async (req, res) => {
   }
 };
 
-// Login a user
-exports.loginUser = async (req, res) => {
+// LOGIN
+export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -86,27 +75,24 @@ exports.loginUser = async (req, res) => {
   }
 
   try {
-    // Normalize email (trim + lowercase)
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if user exists
-    const foundUser = await user.findOne({ email: normalizedEmail });
+    const foundUser = await User.findOne({ email: normalizedEmail });
     if (!foundUser) {
       return res.status(400).json({ message: "User not found" });
     }
 
     // Compare passwords
     const isMatch = await bcrypt.compare(password, foundUser.password);
+
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    console.log("User logged in successfully:", foundUser);
-
-    // Generate token and send response
+    // Success
     res.status(200).json({
       message: "Login successful",
-      token: generateToken(foundUser._id),
+      token: generateToken(foundUser),
       user: {
         id: foundUser._id,
         username: foundUser.username,
@@ -115,7 +101,6 @@ exports.loginUser = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error logging in user:", error);
     res.status(500).json({ message: "Server error" });
   }
 };

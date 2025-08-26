@@ -1,7 +1,7 @@
-const jwt = require("jsonwebtoken");
+import jwt from "jsonwebtoken";
 
 // Function to generate a JWT token
-exports.generateToken = (user) => {
+export const generateToken = (user) => {
   const payload = {
     id: user._id,
     username: user.username,

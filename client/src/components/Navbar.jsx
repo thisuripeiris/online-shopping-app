@@ -39,9 +39,10 @@ export default function Navbar() {
                     <div className="px-4 py-2 text-sm text-gray-700 dark:text-white border-b">
                         @{user.email.split('@')[0]}
                     </div>
+                    <Link to="/cart" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">My Cart</Link>
                     <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">View Profile</Link>
                   
-                    <Link to="/cart" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-white dark:hover:bg-gray-700">My Cart</Link>
+                    
                     <button
                       onClick={handleLogout}
                       className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -66,11 +67,12 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <Link to="/signup" className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Sign up</Link>
-              <Link to="/login" className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Login</Link>
-              <Link to="/cart" className="text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
+            <Link to="/cart" className="text-white bg-green-600 hover:bg-green-700 font-medium rounded-lg text-sm px-4 py-2">
                 Cart
               </Link>
+              <Link to="/signup" className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Sign up</Link>
+              <Link to="/login" className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-lg text-sm px-4 py-2">Login</Link>
+              
             </>
           )}
         </div>
