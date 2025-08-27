@@ -1,13 +1,13 @@
 import Product from "../models/productModel.js";
 
 //Add new products - Admin only
-
 export const addProduct = async (req, res) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Access denied" });
   }
 
   const {
+    code,
     name,
     category,
     subCategory,
@@ -19,6 +19,7 @@ export const addProduct = async (req, res) => {
 
   try {
     const newProduct = new Product({
+      code,
       name,
       category,
       subCategory,
@@ -55,6 +56,28 @@ export const getProductById = async (req, res) => {
     res.status(200).json(product);
   } catch (error) {
     res.status(500).json({ message: "Server error", error });
+  }
+};
+
+// Get products by category (resin / non-resin)
+export const getProductsByCategory = async (req, res) => {
+  try {
+    const { category } = req.params; // "resin" or "non-resin"
+    const products = await Product.find({ category });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching products by category" });
+  }
+};
+
+//Get products by sub-category
+export const getProductsBySubCategory = async (req, res) => {
+  try {
+    const { subCategory } = req.params;
+    const products = await Product.find({ subCategory: subCategory });
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching products by subCategory" });
   }
 };
 
